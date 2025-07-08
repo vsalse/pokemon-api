@@ -13,7 +13,7 @@ import java.util.List;
 public class PokeBasicModel {
     private Integer id;
     private String name;
-    private String front_default;
+    private String frontDefault;
     @Builder.Default
     private List<String> typeList = null;
     @Builder.Default

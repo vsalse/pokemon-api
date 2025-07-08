@@ -3,8 +3,6 @@ package com.pokemon.service;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -23,7 +21,6 @@ public class PokeService {
     @Value("${pokeapi.url}")
     private String pokeApiUrl;
 
-    @Autowired
     public PokeService(WebClient webClient, PokeDataService pokeDataService) {
         this.webClient = webClient;
         this.pokeDataService = pokeDataService;
@@ -31,14 +28,18 @@ public class PokeService {
 
     public List<PokeBasicModel> getPokemonList(Integer page, Integer pageSize) {
         log.info("📄 Obteniendo lista de Pokémon - Página: {}, Tamaño: {}", page, pageSize);
+
         int limit = pageSize;
         int offset = (page != null ? page : 0) * limit;
         String url = pokeApiUrl + "?offset=" + offset + "&limit=" + limit;
+
         Mono<Map> responseMono = webClient.get()
                 .uri(url)
                 .retrieve()
                 .bodyToMono(Map.class);
+
         Map<String, Object> response = responseMono.block();
+
         List<Map<String, String>> results = (List<Map<String, String>>) response.get("results");
 
         log.info("🔗 URLs de Pokémon encontradas: {}",
