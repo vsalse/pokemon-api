@@ -1,6 +1,7 @@
 package com.pokemon.controller;
 
 import com.pokemon.model.PokeBasicModel;
+import com.pokemon.model.PokeDetailModel;
 import com.pokemon.service.PokeService;
 import com.pokemon.service.PokeDataService;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,12 +33,12 @@ public class PokeController {
             @RequestParam(name = "page", required = false, defaultValue = "0") Integer page,
             @RequestParam(name = "size", required = false) Integer size) {
         int effectiveSize = (size == null) ? pageSize : size;
-        return pokeService.getPokemonList(page, effectiveSize);
+        return pokeService.getPokemonList(page, effectiveSize, "es");
     }
 
     @GetMapping("/{id}")
-    public PokeBasicModel getPokemonById(@PathVariable Integer id) {
-        return pokeDataService.parseDataPoke(id);
+    public PokeDetailModel getPokemonById(@PathVariable Integer id) {
+        return pokeDataService.parseDataPoke(id, "es");
     }
 
     @GetMapping("/clear-cache")
@@ -45,5 +46,5 @@ public class PokeController {
     public String clearCache() {
         return "Cache limpiado exitosamente";
     }
-    
-} 
+
+}

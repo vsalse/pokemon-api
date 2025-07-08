@@ -1,6 +1,8 @@
 package com.pokemon.service;
 
 import com.pokemon.model.PokeBasicModel;
+import com.pokemon.model.PokeDetailModel;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -23,8 +25,8 @@ public class PokeDataService {
         this.webClient = webClient;
     }
 
-    @Cacheable(value = "pokemon", key = "#id")
-    public PokeBasicModel parseDataPoke(Integer id) {
+    @Cacheable(value = "pokemon")
+    public PokeDetailModel parseDataPoke(Integer id, String language) {
 
         log.info("🔍 Buscando Pokemon con ID: {} - Llamada REAL a la API", id);
 
@@ -42,33 +44,71 @@ public class PokeDataService {
 
         String name = (String) response.get("name");
         Integer weight = (Integer) response.get("weight");
+        Integer height = (Integer) response.get("height");
 
         // foto del pokemon para lista
         String frontDefault = (String) ((Map<String, Object>) response.get("sprites")).get("front_default");
-        
 
-        // Obtener typeList
+        // lista de tipos
         List<Map<String, Object>> types = (List<Map<String, Object>>) response.get("types");
         List<String> typeList = types.stream()
-                .map(type -> (String) ((Map<String, Object>) type.get("type")).get("name"))
+                .map(type -> traduceItem((String) ((Map<String, Object>) type.get("type")).get("url"), language,
+                        "names", "name"))
                 .collect(Collectors.toList());
 
-        // Obtener abilitiesList
+        // lista de abilidades
         List<Map<String, Object>> abilities = (List<Map<String, Object>>) response.get("abilities");
         List<String> abilitiesList = abilities.stream()
-                .map(ability -> (String) ((Map<String, Object>) ability.get("ability")).get("name"))
+                .map(ability -> traduceItem((String) ((Map<String, Object>) ability.get("ability")).get("url"),
+                        language,
+                        "flavor_text_entries", "flavor_text"))
                 .collect(Collectors.toList());
 
-        PokeBasicModel pokemon = PokeBasicModel.builder()
+        // especie
+        Map<String, Object> speciesMap = (Map<String, Object>) response.get("species");
+        String species = traduceItem((String)speciesMap.get("url"),language, "flavor_text_entries", "flavor_text");
+
+        
+
+        PokeDetailModel pokemon = PokeDetailModel.builder()
                 .id(id)
                 .name(name)
                 .frontDefault(frontDefault)
                 .typeList(typeList)
                 .abilitiesList(abilitiesList)
+                .species(species)
                 .weight(weight)
+                .height(height)
                 .build();
 
         log.info("✅ Pokemon {} (ID: {}) obtenido de la API y cacheado", name, id);
         return pokemon;
     }
+
+    private String traduceItem(String url, String idioma, String collectionName, String propertyName) {
+
+        Mono<Map> responseMono = webClient.get()
+                .uri(url)
+                .retrieve()
+                .bodyToMono(Map.class);
+
+        Map<String, Object> response = responseMono.block();
+
+        if (response == null)
+            return null;
+
+        List<Map<String, Object>> collectionList = (List<Map<String, Object>>) response.get(collectionName);
+        if (collectionList != null) {
+            return collectionList.stream()
+                    .filter(entry -> {
+                        Map<String, Object> language = (Map<String, Object>) entry.get("language");
+                        return language != null && idioma.equals(language.get("name"));
+                    })
+                    .map(entry -> (String) entry.get(propertyName))
+                    .findFirst()
+                    .orElse(null);
+        }
+        return "";
+    }
+
 }

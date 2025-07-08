@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.pokemon.model.PokeBasicModel;
+import com.pokemon.model.PokeDetailModel;
+import com.pokemon.model.PokeMapper;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -26,7 +28,7 @@ public class PokeService {
         this.pokeDataService = pokeDataService;
     }
 
-    public List<PokeBasicModel> getPokemonList(Integer page, Integer pageSize) {
+    public List<PokeBasicModel> getPokemonList(Integer page, Integer pageSize, String language) {
         log.info("📄 Obteniendo lista de Pokémon - Página: {}, Tamaño: {}", page, pageSize);
 
         int limit = pageSize;
@@ -46,7 +48,8 @@ public class PokeService {
                 results.stream().map(p -> p.get("url")).collect(Collectors.toList()));
 
         return results.stream()
-                .map(pokemon -> pokeDataService.parseDataPoke(getIdFromUrl(pokemon.get("url"))))
+                .map(pokemon -> pokeDataService.parseDataPoke(getIdFromUrl(pokemon.get("url")), language))
+                .map(PokeMapper.INSTANCE::toBasic)
                 .collect(Collectors.toList());
     }
 
