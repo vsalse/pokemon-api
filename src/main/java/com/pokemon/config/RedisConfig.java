@@ -1,4 +1,4 @@
-package com.example.pokemonapi.config;
+package com.pokemon.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

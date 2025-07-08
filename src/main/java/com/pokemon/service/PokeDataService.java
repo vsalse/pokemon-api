@@ -1,11 +1,11 @@
-package com.example.pokemonapi.service;
+package com.pokemon.service;
 
-import com.example.pokemonapi.model.PokeBasicModel;
+import com.pokemon.model.PokeBasicModel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import java.util.List;
@@ -20,12 +20,9 @@ public class PokeDataService {
     @Value("${pokeapi.url}")
     private String pokeApiUrl;
 
-    public PokeDataService() {
-        this.webClient = WebClient.builder()
-                .exchangeStrategies(ExchangeStrategies.builder()
-                        .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
-                        .build())
-                .build();
+    @Autowired
+    public PokeDataService(WebClient webClient) {
+        this.webClient = webClient;
     }
 
     @Cacheable(value = "pokemon", key = "#id")

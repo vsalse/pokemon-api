@@ -1,4 +1,4 @@
-package com.example.pokemonapi;
+package com.pokemon;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

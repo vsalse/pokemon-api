@@ -1,4 +1,4 @@
-package com.example.pokemonapi.model;
+package com.pokemon.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

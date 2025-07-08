@@ -1,8 +1,8 @@
-package com.example.pokemonapi;
+package com.pokemon.controller;
 
-import com.example.pokemonapi.model.PokeBasicModel;
-import com.example.pokemonapi.service.PokeService;
-import com.example.pokemonapi.service.PokeDataService;
+import com.pokemon.model.PokeBasicModel;
+import com.pokemon.service.PokeService;
+import com.pokemon.service.PokeDataService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,8 +28,11 @@ public class PokeController {
     }
 
     @GetMapping("")
-    public List<PokeBasicModel> getPokemonList(@RequestParam(name = "page", required = false, defaultValue = "0") Integer page) {
-        return pokeService.getPokemonList(page, pageSize);
+    public List<PokeBasicModel> getPokemonList(
+            @RequestParam(name = "page", required = false, defaultValue = "0") Integer page,
+            @RequestParam(name = "size", required = false) Integer size) {
+        int effectiveSize = (size == null) ? pageSize : size;
+        return pokeService.getPokemonList(page, effectiveSize);
     }
 
     @GetMapping("/{id}")
