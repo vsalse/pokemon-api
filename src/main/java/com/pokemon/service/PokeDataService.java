@@ -47,7 +47,10 @@ public class PokeDataService {
         Integer height = (Integer) response.get("height");
 
         // foto del pokemon para lista
-        String frontDefault = (String) ((Map<String, Object>) response.get("sprites")).get("front_default");
+        String imageList = (String) ((Map<String, Object>) response.get("sprites")).get("front_default");
+
+        // foto del pokemon para el formulario de detalle
+        String imageDetail = getValueFromNestedMap(response, "sprites.other.dream_world.front_default");
 
         // lista de tipos
         List<Map<String, Object>> types = (List<Map<String, Object>>) response.get("types");
@@ -66,14 +69,13 @@ public class PokeDataService {
 
         // especie
         Map<String, Object> speciesMap = (Map<String, Object>) response.get("species");
-        String species = traduceItem((String)speciesMap.get("url"),language, "flavor_text_entries", "flavor_text");
-
-        
+        String species = traduceItem((String) speciesMap.get("url"), language, "flavor_text_entries", "flavor_text");
 
         PokeDetailModel pokemon = PokeDetailModel.builder()
                 .id(id)
                 .name(name)
-                .frontDefault(frontDefault)
+                .imageList(imageList)
+                .imageDetail(imageDetail)
                 .typeList(typeList)
                 .abilitiesList(abilitiesList)
                 .species(species)
@@ -109,6 +111,17 @@ public class PokeDataService {
                     .orElse(null);
         }
         return "";
+    }
+
+    private String getValueFromNestedMap(Map<String, Object> map, String key) {
+
+        Map<String, Object> mapValue = map;
+        String[] parts = key.split("\\.");
+
+        for (int i = 0; i < parts.length - 1; i++) {
+            mapValue = (Map<String, Object>) mapValue.get(parts[i]);
+        }
+        return (String) mapValue.get(parts[parts.length - 1]);
     }
 
 }

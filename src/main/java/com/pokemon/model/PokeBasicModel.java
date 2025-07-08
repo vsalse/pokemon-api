@@ -14,7 +14,7 @@ import java.util.List;
 public class PokeBasicModel {
     private Integer id;
     private String name;
-    private String frontDefault;
+    private String imageList;
     
     @Builder.Default
     private List<String> typeList = null;

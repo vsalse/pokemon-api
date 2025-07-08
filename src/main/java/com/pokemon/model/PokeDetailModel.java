@@ -16,5 +16,6 @@ public class PokeDetailModel extends PokeBasicModel {
     
     private Integer height;
     private String species;
+    private String imageDetail;
     
 } 
