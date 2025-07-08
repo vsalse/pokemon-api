@@ -1,0 +1,23 @@
+package com.example.pokemonapi.model;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PokeBasicModel {
+    private Integer id;
+    private String name;
+    private String front_default;
+    @Builder.Default
+    private List<String> typeList = null;
+    @Builder.Default
+    private List<String> abilitiesList = null;
+    @Builder.Default
+    private Integer weight = null;
+} 
