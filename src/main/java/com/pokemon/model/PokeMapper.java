@@ -6,5 +6,5 @@ import org.mapstruct.factory.Mappers;
 @Mapper
 public interface PokeMapper {
     PokeMapper INSTANCE = Mappers.getMapper(PokeMapper.class);
-    PokeBasicModel toBasic(PokeDetailModel detail);
+    PokeBasicModel toBasic(PokeCacheModel detail);
 } 

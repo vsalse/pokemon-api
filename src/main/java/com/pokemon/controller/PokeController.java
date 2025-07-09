@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/pokemon")
@@ -29,7 +30,7 @@ public class PokeController {
     }
 
     @GetMapping("")
-    public List<PokeBasicModel> getPokemonList(
+    public Mono<List<PokeBasicModel>> getPokemonList(
             @RequestParam(name = "page", required = false, defaultValue = "0") Integer page,
             @RequestParam(name = "size", required = false) Integer size) {
         int effectiveSize = (size == null) ? pageSize : size;
@@ -37,8 +38,8 @@ public class PokeController {
     }
 
     @GetMapping("/{id}")
-    public PokeDetailModel getPokemonById(@PathVariable Integer id) {
-        return pokeDataService.parseDataPoke(id, "es");
+    public Mono<PokeDetailModel> getPokemonById(@PathVariable Integer id) {
+        return pokeService.getPokemonDetail(id, "es");
     }
 
     @GetMapping("/clear-cache")
