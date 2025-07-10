@@ -1,6 +1,5 @@
 package com.pokemon.service;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -11,13 +10,11 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.pokemon.model.PokeBasicModel;
 import com.pokemon.model.PokeCacheModel;
 import com.pokemon.model.PokeSpecieModel;
 import com.pokemon.util.PokeUtils;
 
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -76,7 +73,7 @@ public class PokeDataService {
                     Mono.zip(typeMonos, arr -> Arrays.stream(arr).map(String.class::cast).collect(Collectors.toList())),
                     Mono.zip(abilityMonos,
                             arr -> Arrays.stream(arr).map(String.class::cast).collect(Collectors.toList())),
-                            speciesMono).map(tuple -> {
+                    speciesMono).map(tuple -> {
                         List<String> typeList = (List<String>) tuple.getT1();
                         List<String> abilitiesList = (List<String>) tuple.getT2();
                         PokeSpecieModel species = tuple.getT3();
@@ -125,7 +122,8 @@ public class PokeDataService {
                 .bodyToMono(Map.class)
                 .map(response -> {
                     String evolutionChainUrl = PokeUtils.getStringFromNestedMap(response, "evolution_chain.url");
-                    List<Map<String, Object>> collectionList = (List<Map<String, Object>>) response.get("flavor_text_entries");
+                    List<Map<String, Object>> collectionList = (List<Map<String, Object>>) response
+                            .get("flavor_text_entries");
                     String flavorText = collectionList.stream()
                             .filter(entry -> {
                                 Map<String, Object> languageMap = (Map<String, Object>) entry.get("language");
@@ -141,51 +139,4 @@ public class PokeDataService {
                 });
     }
 
-    public Mono<List<List<PokeBasicModel>>> getEvolutionChain(String url, String language) {
-        return webClient.get()
-                .uri(url)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .flatMap(response -> {
-                    Map<String, Object> chainMap = (Map<String, Object>) response.get("chain");
-                    String speciesUrl = PokeUtils.getStringFromNestedMap(chainMap, "species.url");
-                    Mono<List<PokeBasicModel>> first = parseDataPoke(PokeUtils.getIdFromUrl(speciesUrl), language)
-                        .map(poke -> List.of((PokeBasicModel) poke));
-
-                    List<Map<String, Object>> evolvesToList = (List<Map<String, Object>>) chainMap.get("evolves_to");
-
-                    // Recursivo para toda la cadena de evolución
-                    return getEvolutionChainRecursive(evolvesToList, language)
-                        .flatMap(rest -> first.map(f -> {
-                            rest.add(0, f);
-                            return rest;
-                        }));
-                });
-    }
-
-    private Mono<List<List<PokeBasicModel>>> getEvolutionChainRecursive(List<Map<String, Object>> evolvesToList, String language) {
-        if (evolvesToList == null || evolvesToList.isEmpty()) {
-            return Mono.just(new ArrayList<>());
-        }
-        List<Mono<List<PokeBasicModel>>> monos = new ArrayList<>();
-        for (Map<String, Object> evolvesToMap : evolvesToList) {
-            String speciesUrl = PokeUtils.getStringFromNestedMap(evolvesToMap, "species.url");
-            monos.add(parseDataPoke(PokeUtils.getIdFromUrl(speciesUrl), language)
-                .map(poke -> List.of((PokeBasicModel) poke)));
-        }
-        return Flux.concat(monos)
-            .collectList()
-            .flatMap(list -> {
-                List<Map<String, Object>> nextEvolves = (List<Map<String, Object>>) evolvesToList.get(0).get("evolves_to");
-                if (nextEvolves != null && !nextEvolves.isEmpty()) {
-                    return getEvolutionChainRecursive(nextEvolves, language)
-                        .map(rest -> {
-                            list.addAll(rest);
-                            return list;
-                        });
-                } else {
-                    return Mono.just(list);
-                }
-            });
-    }
 }
