@@ -21,5 +21,5 @@ public class PokeBasicModel {
     @Builder.Default
     private List<String> abilitiesList = null;
     @Builder.Default
-    private Integer weight = null;
+    private Double weight = null;
 } 

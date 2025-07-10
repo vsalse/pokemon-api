@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @SuperBuilder
 public class PokeCacheModel extends PokeBasicModel {
     
-    private Integer height;
+    private Double height;
     private PokeSpecieModel species;
     private String imageDetail;
     

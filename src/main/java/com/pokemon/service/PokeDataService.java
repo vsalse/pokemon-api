@@ -45,8 +45,10 @@ public class PokeDataService {
                 return Mono.empty();
 
             String name = (String) response.get("name");
-            Integer weight = (Integer) response.get("weight");
-            Integer height = (Integer) response.get("height");
+            Integer weightRaw = (Integer) response.get("weight");
+            Double weight = weightRaw != null ? weightRaw / 10.0 : null;
+            Integer heightRaw = (Integer) response.get("height");
+            Double height = heightRaw != null ? heightRaw / 10.0 : null;
 
             String imageList = (String) ((Map<String, Object>) response.get("sprites")).get("front_default");
             String imageDetail = PokeUtils.getStringFromNestedMap(response, "sprites.other.dream_world.front_default");
