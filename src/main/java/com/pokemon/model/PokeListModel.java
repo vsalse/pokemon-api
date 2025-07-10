@@ -11,12 +11,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class PokeBasicModel {
-    private Integer id;
-    private String name;
-    private String imageList;
-    private Double weight;
+public class PokeListModel {
+    private Integer recordCount;
+    private List<PokeBasicModel> list;
 
-    private List<String> typeList;
-    private List<String> abilitiesList;
 }

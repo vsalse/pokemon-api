@@ -4,6 +4,7 @@ import java.util.Map;
 
 public class PokeUtils {
     public static Integer getIdFromUrl(String urlDataPoke) {
+        System.out.println("@@@urlDataPoke: " + urlDataPoke);
         String[] parts = urlDataPoke.split("/");
         return Integer.parseInt(parts[parts.length - 1]);
     }
