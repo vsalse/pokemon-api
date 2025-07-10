@@ -1,5 +1,6 @@
 package com.pokemon.service;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.pokemon.model.PokeBasicModel;
 import com.pokemon.model.PokeDetailModel;
@@ -39,22 +41,25 @@ public class PokeService {
         int offset = (page != null ? page : 0) * limit;
         String url = pokeApiUrl + "?offset=" + offset + "&limit=" + limit;
 
-        Mono<Map> responseMono = webClient.get()
+        return webClient.get()
                 .uri(url)
                 .retrieve()
-                .bodyToMono(Map.class);
+                .bodyToMono(Map.class)
+                .retryWhen(reactor.util.retry.Retry.backoff(3, Duration.ofSeconds(2))
+                        .filter(throwable -> throwable instanceof WebClientResponseException || 
+                                            throwable instanceof java.net.SocketException))
+                .doOnError(error -> log.error("❌ Error obteniendo lista de Pokémon: {}", error.getMessage()))
+                .flatMap(response -> {
+                    List<Map<String, String>> results = (List<Map<String, String>>) response.get("results");
 
-        Map<String, Object> response = responseMono.block();
+                    log.info("🔗 URLs de Pokemon encontradas: {}",
+                            results.stream().map(p -> p.get("url")).collect(Collectors.toList()));
 
-        List<Map<String, String>> results = (List<Map<String, String>>) response.get("results");
-
-        log.info("🔗 URLs de Pokemon encontradas: {}",
-                results.stream().map(p -> p.get("url")).collect(Collectors.toList()));
-
-        return Flux.fromIterable(results)
-                .flatMap(pokemon -> pokeDataService.parseDataPoke(PokeUtils.getIdFromUrl(pokemon.get("url")), language))
-                .map(PokeMapper.INSTANCE::toBasic)
-                .collectList();
+                    return Flux.fromIterable(results)
+                            .flatMap(pokemon -> pokeDataService.parseDataPoke(PokeUtils.getIdFromUrl(pokemon.get("url")), language))
+                            .map(PokeMapper.INSTANCE::toBasic)
+                            .collectList();
+                });
     }
 
     public Mono<PokeDetailModel> getPokemonDetail(Integer id, String language) {
@@ -73,6 +78,10 @@ public class PokeService {
                 .uri(url)
                 .retrieve()
                 .bodyToMono(Map.class)
+                .retryWhen(reactor.util.retry.Retry.backoff(3, Duration.ofSeconds(2))
+                        .filter(throwable -> throwable instanceof WebClientResponseException || 
+                                            throwable instanceof java.net.SocketException))
+                .doOnError(error -> log.error("❌ Error obteniendo cadena de evolución: {}", error.getMessage()))
                 .flatMap(response -> {
                     Map<String, Object> chainMap = (Map<String, Object>) response.get("chain");
                     String speciesUrl = PokeUtils.getStringFromNestedMap(chainMap, "species.url");
@@ -96,27 +105,50 @@ public class PokeService {
         if (evolvesToList == null || evolvesToList.isEmpty()) {
             return Mono.just(new ArrayList<>());
         }
-        List<Mono<List<PokeBasicModel>>> monos = new ArrayList<>();
-        for (Map<String, Object> evolvesToMap : evolvesToList) {
+        
+        // Si solo hay un elemento, aplicar la lógica actual
+        if (evolvesToList.size() == 1) {
+            List<Mono<List<PokeBasicModel>>> monos = new ArrayList<>();
+            Map<String, Object> evolvesToMap = evolvesToList.get(0);
             String speciesUrl = PokeUtils.getStringFromNestedMap(evolvesToMap, "species.url");
             monos.add(pokeDataService.parseDataPoke(PokeUtils.getIdFromUrl(speciesUrl), language)
                     .map(poke -> List.of(PokeMapper.INSTANCE.toBasic(poke))));
+            
+            return Flux.concat(monos)
+                    .collectList()
+                    .flatMap(list -> {
+                        List<Map<String, Object>> nextEvolves = (List<Map<String, Object>>) evolvesToMap
+                                .get("evolves_to");
+                        if (nextEvolves != null && !nextEvolves.isEmpty()) {
+                            return getEvolutionChainRecursive(nextEvolves, language)
+                                    .map(rest -> {
+                                        list.addAll(rest);
+                                        return list;
+                                    });
+                        } else {
+                            return Mono.just(list);
+                        }
+                    });
+        } else {
+            // Si hay más de un elemento, iterar todos los items
+            List<Mono<List<PokeBasicModel>>> monos = new ArrayList<>();
+            List<Mono<PokeBasicModel>> pokeMonos = new ArrayList<>();
+            
+            for (Map<String, Object> evolvesToMap : evolvesToList) {
+                String speciesUrl = PokeUtils.getStringFromNestedMap(evolvesToMap, "species.url");
+                pokeMonos.add(pokeDataService.parseDataPoke(PokeUtils.getIdFromUrl(speciesUrl), language)
+                        .map(poke -> PokeMapper.INSTANCE.toBasic(poke)));
+            }
+            
+            // Agrupar todos los PokeBasicModel en una sola lista
+            return Flux.concat(pokeMonos)
+                    .collectList()
+                    .map(pokeList -> {
+                        monos.add(Mono.just(pokeList));
+                        return monos;
+                    })
+                    .flatMap(monosList -> Flux.concat(monosList).collectList());
         }
-        return Flux.concat(monos)
-                .collectList()
-                .flatMap(list -> {
-                    List<Map<String, Object>> nextEvolves = (List<Map<String, Object>>) evolvesToList.get(0)
-                            .get("evolves_to");
-                    if (nextEvolves != null && !nextEvolves.isEmpty()) {
-                        return getEvolutionChainRecursive(nextEvolves, language)
-                                .map(rest -> {
-                                    list.addAll(rest);
-                                    return list;
-                                });
-                    } else {
-                        return Mono.just(list);
-                    }
-                });
     }
 
     
