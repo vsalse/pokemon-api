@@ -66,7 +66,7 @@ public class PokeController extends BaseExceptionHandler {
     }
 
     @GetMapping("/clear-cache")
-    @Operation(summary = "Limpiar caché", description = "Limpia toda la caché de Pokemon")
+    @Operation(summary = "Limpiar caché", description = "Limpia toda la caché de pokemones")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Caché limpiada exitosamente")
     })

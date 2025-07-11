@@ -1,5 +1,8 @@
 package com.pokemon.util;
 
+/**
+ * Exception usada para lanzar errores de negocio
+ */
 public class CustomException extends RuntimeException {
     private static final long serialVersionUID = 1L;
     private final int statusCode;

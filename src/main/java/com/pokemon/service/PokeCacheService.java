@@ -31,6 +31,12 @@ public class PokeCacheService {
                 this.webClient = webClient;
         }
 
+        /**
+         * metodo que obtiene toda la informacion necesaria del pokemon a traves de la api de pokemon y luego es cacheada
+         * @param id nro de pokemon
+         * @param language lenguage con el cual se obtienen informacion de la api de pokemon
+         * @return devuelve los datos detallados del pokemon
+         */
         @Cacheable(value = "pokemon")
         public Mono<PokeCacheModel> getDataPoke(Integer id, String language) {
                 log.info("🔍 Buscando Pokemon con ID: {} - Llamada REAL a la API", id);
@@ -47,14 +53,19 @@ public class PokeCacheService {
                                 return Mono.empty();
 
                         String name = (String) response.get("name");
+
                         Integer weightRaw = (Integer) response.get("weight");
+                        // se divide por 10 para convertir el peso en kilos
                         Double weight = weightRaw != null ? weightRaw / 10.0 : null;
+
                         Integer heightRaw = (Integer) response.get("height");
+                        // se divide por 10 para convertir la altura en metros
                         Double height = heightRaw != null ? heightRaw / 10.0 : null;
 
                         // Imagen principal
                         String tmpImageList = null;
                         String tmpImageDetail = null;
+
                         Map<String, Object> sprites = (Map<String, Object>) response.get("sprites");
                         if (sprites != null) {
                             tmpImageList = (String) sprites.get("front_default");
@@ -69,7 +80,7 @@ public class PokeCacheService {
                         final String imageList = (tmpImageList == null || tmpImageList.isEmpty()) ? imageNotAvailableUrl : tmpImageList;
                         final String imageDetail = (tmpImageDetail == null || tmpImageDetail.isEmpty()) ? imageList : tmpImageDetail;
 
-                // Tipos
+                // tipos
                 List<Map<String, Object>> types = (List<Map<String, Object>>) response.get("types");
                 if (types == null) types = List.of();
                 List<Mono<String>> typeMonos = types.stream()
@@ -81,7 +92,7 @@ public class PokeCacheService {
                     })
                     .collect(Collectors.toList());
 
-                // Habilidades
+                // habilidades
                 List<Map<String, Object>> abilities = (List<Map<String, Object>>) response.get("abilities");
                 if (abilities == null) abilities = List.of();
                 List<Mono<String>> abilityMonos = abilities.stream()
@@ -93,7 +104,7 @@ public class PokeCacheService {
                     })
                     .collect(Collectors.toList());
 
-                // Especie
+                // especie
                 Map<String, Object> speciesMap = (Map<String, Object>) response.get("species");
                 String speciesUrl = null;
                 if (speciesMap != null) {
@@ -127,6 +138,14 @@ public class PokeCacheService {
                 });
         }
 
+        /**
+         * Obtiene el primer valor desde una coleccion del resultado de un endpoint. Usado para obtener los valores para armar la data detallada del pokemon
+         * @param url endpoint que ejecuta para luego obtener la informacion deseada
+         * @param language lenguage con el cual se obtienen el valor deseado
+         * @param collectionName nombre de la coleccion de donde se sacara el valor
+         * @param propertyName nombre de la propiedad que contiene el valor a obtener
+         * @return valor en el lenguage requerido
+         */
         private Mono<String> traduceItemAsync(String url, String language, String collectionName, String propertyName) {
                 return webClient.get()
                                 .uri(url)
@@ -154,6 +173,12 @@ public class PokeCacheService {
                                 });
         }
 
+        /**
+         * Obtiene la data de la especie del pokemon
+         * @param url endpoint de la api para obtener la informacion
+         * @param language lenguage con el cual se obtienen el valor deseado
+         * @return datos de la especie del pokemon
+         */
         private Mono<PokeSpecieModel> getSpecie(String url, String language) {
                 return webClient.get()
                                 .uri(url)

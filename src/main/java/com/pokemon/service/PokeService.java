@@ -35,6 +35,13 @@ public class PokeService {
         this.pokeCacheService = pokeCacheService;
     }
 
+    /**
+     * Utilizado para obtener la lista paginada de pokemones
+     * @param page nro de pagina
+     * @param pageSize tamaño de la pagina
+     * @param language lenguage con el cual se obtienen informacion de la api de pokemon
+     * @return lista de pokemones con su cantidad total, para que el front pueda hacer el calculo de paginas totales
+     */
     public Mono<PokeListModel> getPokemonList(Integer page, Integer pageSize, String language) {
         log.info("📄 Obteniendo lista de Pokemon - Página: {}, Tamaño: {}", page, pageSize);
 
@@ -54,7 +61,7 @@ public class PokeService {
                     Integer count = (Integer) response.get("count");
                     List<Map<String, String>> results = (List<Map<String, String>>) response.get("results");
 
-                    // Filtrar resultados nulos o sin URL
+                    // se filtra resultados nulos o sin URL
                     List<Map<String, String>> filteredResults = results == null ? List.of() : results.stream()
                         .filter(p -> p != null && p.get("url") != null && !p.get("url").isEmpty())
                         .collect(Collectors.toList());
@@ -87,6 +94,13 @@ public class PokeService {
                 });
     }
 
+    /**
+     * Utilizado para obtener la informacion detallada del pokemon. La primera vez consume las apis de pokemon para obtener todos los datos necesarios y luego 
+     * carga el modelo detallado y lo guarda en cache. Si ya esta en cache lo usa evitando el consumo de las apis.
+     * @param id nro de pokemon
+     * @param language idioma con el cual se obtienen la informacion desde la api de pokemon
+     * @return modelo con la informacion detallada del pokemon
+     */
     public Mono<PokeDetailModel> getPokemonDetail(Integer id, String language) {
         log.info("📄 Obteniendo detalle del Pokemon - id: {}", id);
         return pokeCacheService.getDataPoke(id, language)
@@ -98,6 +112,12 @@ public class PokeService {
                                 .build()));
     }
 
+    /**
+     * obtiene las evoluciones de un pokemon
+     * @param url url con la cual se obtiene informacion de la api pokemon sobre la evolucion del pokemon
+     * @param language idioma con el cual se obtienen la informacion desde la api de pokemon 
+     * @return lista de pokemon de acuerdo a la data obtenida de la evolucion
+     */
     private Mono<List<List<PokeBasicModel>>> getEvolutionChain(String url, String language) {
         return webClient.get()
                 .uri(url)
@@ -125,6 +145,12 @@ public class PokeService {
                 });
     }
 
+    /**
+     * Metodo recursivo con el cual se parsea la informacion de las evoluciones
+     * @param evolvesToList lista de evoluciones 
+     * @param language idioma con el cual se obtienen la informacion desde la api de pokemon 
+     * @return lista de pokemon de la evolucion
+     */
     private Mono<List<List<PokeBasicModel>>> getEvolutionChainRecursive(List<Map<String, Object>> evolvesToList,
             String language) {
         if (evolvesToList == null || evolvesToList.isEmpty()) {

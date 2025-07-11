@@ -2,9 +2,11 @@ package com.pokemon.util;
 
 import java.util.Map;
 
+/**
+ * Clase de utilidades
+ */
 public class PokeUtils {
     public static Integer getIdFromUrl(String urlDataPoke) {
-        System.out.println("@@@urlDataPoke: " + urlDataPoke);
         String[] parts = urlDataPoke.split("/");
         return Integer.parseInt(parts[parts.length - 1]);
     }
