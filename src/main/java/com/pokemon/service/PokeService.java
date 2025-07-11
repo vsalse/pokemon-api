@@ -66,10 +66,6 @@ public class PokeService {
                         .filter(p -> p != null && p.get("url") != null && !p.get("url").isEmpty())
                         .collect(Collectors.toList());
 
-                    if (filteredResults.size() != (results == null ? 0 : results.size())) {
-                        log.warn("⚠️ Se encontraron resultados nulos o sin URL en la respuesta de la API externa. Filtrados: {} de {}", (results == null ? 0 : results.size()) - filteredResults.size(), results == null ? 0 : results.size());
-                    }
-
                     log.info("🔗 URLs de Pokemon válidas: {}",
                             filteredResults.stream().map(p -> p.get("url")).collect(Collectors.toList()));
 

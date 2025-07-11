@@ -31,6 +31,9 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation 'org.springframework:spring-web:6.2.8'
+	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation("com.squareup.okhttp3:mockwebserver:4.11.0")
+
 }
 
 tasks.named('test') {

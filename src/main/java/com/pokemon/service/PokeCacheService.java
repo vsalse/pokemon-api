@@ -32,9 +32,12 @@ public class PokeCacheService {
         }
 
         /**
-         * metodo que obtiene toda la informacion necesaria del pokemon a traves de la api de pokemon y luego es cacheada
-         * @param id nro de pokemon
-         * @param language lenguage con el cual se obtienen informacion de la api de pokemon
+         * metodo que obtiene toda la informacion necesaria del pokemon a traves de la
+         * api de pokemon y luego es cacheada
+         * 
+         * @param id       nro de pokemon
+         * @param language lenguage con el cual se obtienen informacion de la api de
+         *                 pokemon
          * @return devuelve los datos detallados del pokemon
          */
         @Cacheable(value = "pokemon")
@@ -68,49 +71,67 @@ public class PokeCacheService {
 
                         Map<String, Object> sprites = (Map<String, Object>) response.get("sprites");
                         if (sprites != null) {
-                            tmpImageList = (String) sprites.get("front_default");
-                            Map<String, Object> other = (Map<String, Object>) sprites.get("other");
-                            if (other != null) {
-                                Map<String, Object> dreamWorld = (Map<String, Object>) other.get("dream_world");
-                                if (dreamWorld != null) {
-                                    tmpImageDetail = (String) dreamWorld.get("front_default");
+                                tmpImageList = (String) sprites.get("front_default");
+                                Map<String, Object> other = (Map<String, Object>) sprites.get("other");
+                                if (other != null) {
+                                        Map<String, Object> dreamWorld = (Map<String, Object>) other.get("dream_world");
+                                        if (dreamWorld != null) {
+                                                tmpImageDetail = (String) dreamWorld.get("front_default");
+                                        }
                                 }
-                            }
                         }
-                        final String imageList = (tmpImageList == null || tmpImageList.isEmpty()) ? imageNotAvailableUrl : tmpImageList;
-                        final String imageDetail = (tmpImageDetail == null || tmpImageDetail.isEmpty()) ? imageList : tmpImageDetail;
+                        final String imageList = (tmpImageList == null || tmpImageList.isEmpty()) ? imageNotAvailableUrl
+                                        : tmpImageList;
+                        final String imageDetail = (tmpImageDetail == null || tmpImageDetail.isEmpty()) ? imageList
+                                        : tmpImageDetail;
 
-                // tipos
-                List<Map<String, Object>> types = (List<Map<String, Object>>) response.get("types");
-                if (types == null) types = List.of();
-                List<Mono<String>> typeMonos = types.stream()
-                    .map(type -> {
-                        Map<String, Object> typeObj = (Map<String, Object>) type.get("type");
-                        if (typeObj == null) return Mono.just("Desconocido");
-                        String url = (String) typeObj.get("url");
-                        return url != null ? traduceItemAsync(url, language, "names", "name").defaultIfEmpty("Desconocido") : Mono.just("Desconocido");
-                    })
-                    .collect(Collectors.toList());
+                        // tipos
+                        List<Map<String, Object>> types = (List<Map<String, Object>>) response.get("types");
+                        // try{System.out.println("@@@types" + new
+                        // ObjectMapper().writeValueAsString(types));}catch(Exception ex){}
+                        if (types == null)
+                                types = List.of();
+                        List<Mono<String>> typeMonos = types.stream()
+                                        .map(type -> {
+                                                Map<String, Object> typeObj = (Map<String, Object>) type.get("type");
+                                                if (typeObj == null)
+                                                        return Mono.just("Desconocido");
+                                                String url = (String) typeObj.get("url");
+                                                return url != null
+                                                                ? traduceItemAsync(url, language, "names", "name")
+                                                                                .defaultIfEmpty("Desconocido")
+                                                                : Mono.just("Desconocido");
+                                        })
+                                        .collect(Collectors.toList());
 
-                // habilidades
-                List<Map<String, Object>> abilities = (List<Map<String, Object>>) response.get("abilities");
-                if (abilities == null) abilities = List.of();
-                List<Mono<String>> abilityMonos = abilities.stream()
-                    .map(ability -> {
-                        Map<String, Object> abObj = (Map<String, Object>) ability.get("ability");
-                        if (abObj == null) return Mono.just("Desconocido");
-                        String url = (String) abObj.get("url");
-                        return url != null ? traduceItemAsync(url, language, "flavor_text_entries", "flavor_text").defaultIfEmpty("Desconocido") : Mono.just("Desconocido");
-                    })
-                    .collect(Collectors.toList());
+                        // habilidades
+                        List<Map<String, Object>> abilities = (List<Map<String, Object>>) response.get("abilities");
+                        // try{System.out.println("@@@abilities" + new
+                        // ObjectMapper().writeValueAsString(abilities));}catch(Exception ex){}
+                        if (abilities == null)
+                                abilities = List.of();
+                        List<Mono<String>> abilityMonos = abilities.stream()
+                                        .map(ability -> {
+                                                Map<String, Object> abObj = (Map<String, Object>) ability
+                                                                .get("ability");
+                                                if (abObj == null)
+                                                        return Mono.just("Desconocido");
+                                                String url = (String) abObj.get("url");
+                                                return url != null
+                                                                ? traduceItemAsync(url, language, "flavor_text_entries",
+                                                                                "flavor_text")
+                                                                                .defaultIfEmpty("Desconocido")
+                                                                : Mono.just("Desconocido");
+                                        })
+                                        .collect(Collectors.toList());
 
-                // especie
-                Map<String, Object> speciesMap = (Map<String, Object>) response.get("species");
-                String speciesUrl = null;
-                if (speciesMap != null) {
-                    speciesUrl = (String) speciesMap.get("url");
-                }
-                Mono<PokeSpecieModel> speciesMono = getSpecie(speciesUrl, language);
+                        // especie
+                        Map<String, Object> speciesMap = (Map<String, Object>) response.get("species");
+                        String speciesUrl = null;
+                        if (speciesMap != null) {
+                                speciesUrl = (String) speciesMap.get("url");
+                        }
+                        Mono<PokeSpecieModel> speciesMono = getSpecie(speciesUrl, language);
 
                         return Mono.zip(
                                         Mono.zip(typeMonos,
@@ -139,11 +160,14 @@ public class PokeCacheService {
         }
 
         /**
-         * Obtiene el primer valor desde una coleccion del resultado de un endpoint. Usado para obtener los valores para armar la data detallada del pokemon
-         * @param url endpoint que ejecuta para luego obtener la informacion deseada
-         * @param language lenguage con el cual se obtienen el valor deseado
+         * Obtiene el primer valor desde una coleccion del resultado de un endpoint.
+         * Usado para obtener los valores para armar la data detallada del pokemon
+         * 
+         * @param url            endpoint que ejecuta para luego obtener la informacion
+         *                       deseada
+         * @param language       lenguage con el cual se obtienen el valor deseado
          * @param collectionName nombre de la coleccion de donde se sacara el valor
-         * @param propertyName nombre de la propiedad que contiene el valor a obtener
+         * @param propertyName   nombre de la propiedad que contiene el valor a obtener
          * @return valor en el lenguage requerido
          */
         private Mono<String> traduceItemAsync(String url, String language, String collectionName, String propertyName) {
@@ -152,12 +176,13 @@ public class PokeCacheService {
                                 .retrieve()
                                 .bodyToMono(Map.class)
                                 .map(response -> {
+                                        System.out.println("traduceItemAsync response: " + response);
                                         if (response == null)
                                                 return "Desconocido";
                                         List<Map<String, Object>> collectionList = (List<Map<String, Object>>) response
                                                         .get(collectionName);
                                         if (collectionList != null) {
-                                                return collectionList.stream()
+                                                String result = collectionList.stream()
                                                                 .filter(entry -> {
                                                                         Map<String, Object> languageMap = (Map<String, Object>) entry
                                                                                         .get("language");
@@ -168,14 +193,18 @@ public class PokeCacheService {
                                                                 .filter(val -> val != null && !val.isEmpty())
                                                                 .findFirst()
                                                                 .orElse("Desconocido");
+                                                System.out.println("traduceItemAsync result: " + result);
+                                                return result;
                                         }
+                                        System.out.println("traduceItemAsync result: Desconocido");
                                         return "Desconocido";
                                 });
         }
 
         /**
          * Obtiene la data de la especie del pokemon
-         * @param url endpoint de la api para obtener la informacion
+         * 
+         * @param url      endpoint de la api para obtener la informacion
          * @param language lenguage con el cual se obtienen el valor deseado
          * @return datos de la especie del pokemon
          */
