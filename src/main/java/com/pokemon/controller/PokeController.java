@@ -31,6 +31,14 @@ public class PokeController extends BaseExceptionHandler {
     @Value("${pokeapi.max-page-size:20}")
     private int maxPageSize;
 
+    @Value("${pokeapi.default-language:es}")
+    private String defaultLanguage;
+
+    // Lista de idiomas válidos según la pokeapi
+    private static final java.util.Set<String> VALID_LANGUAGES = java.util.Set.of(
+        "ja-Hrkt", "roomaji", "ko", "zh-Hant", "fr", "de", "es", "it", "en", "cs", "ja", "zh-Hans", "pt-BR"
+    );
+
     private final PokeService pokeService;
 
     public PokeController(PokeService pokeService) {
@@ -45,12 +53,17 @@ public class PokeController extends BaseExceptionHandler {
     })
     public Mono<PokeListModel> getPokemonList(
             @Parameter(description = "Número de página (base 0)", example = "0") @RequestParam(name = "page", required = false, defaultValue = "0") Integer page,
-            @Parameter(description = "Tamaño de la página", example = "10") @RequestParam(name = "size", required = false) Integer size) {
+            @Parameter(description = "Tamaño de la página", example = "10") @RequestParam(name = "size", required = false) Integer size,
+            @Parameter(description = "Idioma de la respuesta. Valores posibles: ja-Hrkt, roomaji, ko, zh-Hant, fr, de, es, it, en, cs, ja, zh-Hans, pt-BR", example = "es") @RequestParam(name = "language", required = false) String language) {
         int effectiveSize = (size == null) ? pageSize : size;
         if (effectiveSize > maxPageSize) {
             throw new CustomException("El máximo valor del tamaño de la pagina es de " + maxPageSize, 400);
         }
-        return pokeService.getPokemonList(page, effectiveSize, "es");
+        String lang = (language != null && !language.isBlank()) ? language : defaultLanguage;
+        if (!VALID_LANGUAGES.contains(lang)) {
+            throw new CustomException("Idioma no soportado. Valores permitidos: " + VALID_LANGUAGES, 400);
+        }
+        return pokeService.getPokemonList(page, effectiveSize, lang);
     }
 
     @GetMapping("/{id}")
@@ -61,8 +74,13 @@ public class PokeController extends BaseExceptionHandler {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     public Mono<PokeDetailModel> getPokemonById(
-            @Parameter(description = "Número del Pokemon", example = "1") @PathVariable Integer id) {
-        return pokeService.getPokemonDetail(id, "es");
+            @Parameter(description = "Número del Pokemon", example = "1") @PathVariable Integer id,
+            @Parameter(description = "Idioma de la respuesta. Valores posibles: ja-Hrkt, roomaji, ko, zh-Hant, fr, de, es, it, en, cs, ja, zh-Hans, pt-BR", example = "es") @RequestParam(name = "language", required = false) String language) {
+        String lang = (language != null && !language.isBlank()) ? language : defaultLanguage;
+        if (!VALID_LANGUAGES.contains(lang)) {
+            throw new CustomException("Idioma no soportado. Valores permitidos: " + VALID_LANGUAGES, 400);
+        }
+        return pokeService.getPokemonDetail(id, lang);
     }
 
     @GetMapping("/clear-cache")
