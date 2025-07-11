@@ -18,7 +18,7 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Pokemon API")
-                        .description("API para obtener información de pokemones")
+                        .description("API para obtener información de pokemones. [Doc DESPLIEGUE en GCloud](/docs/despliegue_gcloud.html)")
                         .version("1.0.0")
                         .contact(new Contact()
                                 .name("Pokemon Team")
