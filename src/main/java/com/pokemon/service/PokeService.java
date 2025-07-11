@@ -36,14 +36,12 @@ public class PokeService {
     }
 
     public Mono<PokeListModel> getPokemonList(Integer page, Integer pageSize, String language) {
-        log.info("📄 Obteniendo lista de Pokémon - Página: {}, Tamaño: {}", page, pageSize);
+        log.info("📄 Obteniendo lista de Pokemon - Página: {}, Tamaño: {}", page, pageSize);
 
         int limit = pageSize;
         int offset = (page != null ? page : 0) * limit;
         String url = pokeApiUrl + "?offset=" + offset + "&limit=" + limit;
 
-        System.out.println("@@@url: " + url);
-        
         return webClient.get()
                 .uri(url)
                 .retrieve()
@@ -51,11 +49,10 @@ public class PokeService {
                 .retryWhen(reactor.util.retry.Retry.backoff(3, Duration.ofSeconds(2))
                         .filter(throwable -> throwable instanceof WebClientResponseException ||
                                 throwable instanceof java.net.SocketException))
-                .doOnError(error -> log.error("❌ Error obteniendo lista de Pokémon: {}", error.getMessage()))
+                .doOnError(error -> log.error("❌ Error obteniendo lista de Pokemon: {}", error.getMessage()))
                 .flatMap(response -> {
                     Integer count = (Integer) response.get("count");
                     List<Map<String, String>> results = (List<Map<String, String>>) response.get("results");
-                    System.out.println("@@@results: " + results);
 
                     // Filtrar resultados nulos o sin URL
                     List<Map<String, String>> filteredResults = results == null ? List.of() : results.stream()
@@ -134,7 +131,6 @@ public class PokeService {
             return Mono.just(new ArrayList<>());
         }
 
-        // Si solo hay un elemento, aplicar la lógica actual
         if (evolvesToList.size() == 1) {
             List<Mono<List<PokeBasicModel>>> monos = new ArrayList<>();
             Map<String, Object> evolvesToMap = evolvesToList.get(0);
@@ -158,7 +154,7 @@ public class PokeService {
                         }
                     });
         } else {
-            // Si hay más de un elemento, iterar todos los items
+            // si hay más de un elemento, iterar todos los items
             List<Mono<List<PokeBasicModel>>> monos = new ArrayList<>();
             List<Mono<PokeBasicModel>> pokeMonos = new ArrayList<>();
 
@@ -168,7 +164,7 @@ public class PokeService {
                         .map(poke -> PokeMapper.INSTANCE.toBasic(poke)));
             }
 
-            // Agrupar todos los PokeBasicModel en una sola lista
+            // se agrupa todos los PokeBasicModel en una sola lista
             return Flux.concat(pokeMonos)
                     .collectList()
                     .map(pokeList -> {
